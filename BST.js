@@ -1,4 +1,7 @@
 let root = null;
+const canvasWidth = 1024;
+const canvasHeight = 500;
+const delay = 500;
 
 /************
  * BST CORE *
@@ -51,7 +54,7 @@ function getHeight(node) {
 }
 
 // INSERT AN ELEMENT TO THE TREE
-function push(node, data, posY, parent, loc) {
+function bstPush(node, data, posY, parent, loc) {
 	let curr = node;
 
 	if (curr != null) {
@@ -66,15 +69,15 @@ function push(node, data, posY, parent, loc) {
 		// if new data < current node's data, then go to left subtree
 		sleep(delay);
 		curr.highlighted = false;
-		curr.left = push(curr.left, data, posY + 40, curr, "left");
+		curr.left = bstPush(curr.left, data, posY + 40, curr, "left");
 	} else if (data >= curr.data) {
 		// if new data >= current node's data, then go to right subtree
 		sleep(delay);
 		curr.highlighted = false;
-		curr.right = push(curr.right, data, posY + 40, curr, "right");
+		curr.right = bstPush(curr.right, data, posY + 40, curr, "right");
 	}
 
-	curr.height = Math.max(getHeight(curr.left), getHeight(curr.right)) + 1; // update the heights of all nodes traversed by the push() function
+	curr.height = Math.max(getHeight(curr.left), getHeight(curr.right)) + 1; // update the heights of all nodes traversed by the bstPush() function
 
 	return curr; // return the modifications back to the caller
 }
@@ -96,7 +99,7 @@ function findNodeByPos(node, posX, posY) {
 }
 
 // DELETE AN ELEMENT FROM THE TREE
-function pop(node) {
+function bstPop(node) {
 	unhighlightAll(root);
 	node.highlighted = true;
 
@@ -170,11 +173,11 @@ function pop(node) {
 		node.data = largestLeft.data;
 		unhighlightAll(root);
 		sleep(delay);
-		node.left = pop(node.left, largestLeft.data);
+		node.left = bstPop(node.left, largestLeft.data);
 	}
 	if (node == null) return node;
 
-	node.height = Math.max(getHeight(node.left), getHeight(node.right)) + 1; // update the heights of all nodes traversed by the pop() function
+	node.height = Math.max(getHeight(node.left), getHeight(node.right)) + 1; // update the heights of all nodes traversed by the bstPop() function
 
 	return node; // return the modifications back to the caller
 }
@@ -199,24 +202,6 @@ function updatePosition(node) {
 	}
 }
 
-// EVENT LISTENER TO LISTEN COMMANDS FROM THE MAIN THREAD. THE TREE WILL EXECUTE EVERYTHING THE MAIN THREAD WANTS.
-self.addEventListener("message", (event) => {
-	switch (event.data[0]) {
-		case "Insert": {
-			const value = event.data[1]; // get value from user input
-			canvasWidth = event.data[2]; // get canvasWidth from main thread. Important for node positioning
-			break;
-		}
-		case "Delete": {
-			const posX = event.data[1]; // get value from user input
-			const posY = event.data[2];
-			break;
-		}
-		default:
-			break;
-	}
-});
-
 /*************
  * UI MODULE *
  *************/
@@ -240,19 +225,19 @@ function displayNode(curr) {
 		displayNode(curr.right);
 	}
 }
+
 function insert() {
-	let value = 100; // Placeholder
+	let value = document.getElementById("insertValue").value;
 	if (isNaN(value) === true) return undefined;
-	root = push(root, value, 50, null, "root"); // push it
+	root = bstPush(root, value, 50, null, "root"); // bstPush it
 	updatePosition(root); // update all node position
 	return 0;
 }
 
-function del() {
-	if (isNaN(value) === true) return undefined;
+function del(posX, posY) {
 	let node = findNodeByPos(root, posX, posY);
 	if (node) {
-		root = pop(node); // delete it
+		root = bstPop(node); // delete it
 		updatePosition(root); // update the node position
 		unhighlightAll(root); // unhighlight all nodes
 	}
@@ -262,12 +247,20 @@ function del() {
 
 function setup() {
 	// INITIALIZE WEB WORKER THREAD FOR THE TREE ALGORITHM AND VISUALIZATION
-	BST = new Worker("BST.js");
+	// SET CANVAS AND TEXT SIZE
+	const canvas = createCanvas(canvasWidth, canvasHeight);
+	canvas.parent("main");
+	canvas.mouseClicked(function (event) {
+		del(event.layerX, event.layerY);
+	});
+
+	document.getElementById("insertButton").addEventListener("click", (e) => {
+		insert();
+	});
 }
 
 function draw() {
 	background("white");
-	displayNode(tree);
+	displayNode(root);
 	fill("black");
-	textAlign(LEFT);
 }
