@@ -36,6 +36,7 @@ class Node {
 
 // DELAY CODE EXECUTION FOR SPECIFIED MILLISECONDS
 function sleep(ms) {
+  self.postMessage([root]);
 	const start = Date.now();
 	while (Date.now() < start + ms);
 }
@@ -88,7 +89,7 @@ function findNodeByPos(node, posX, posY) {
 		let dx = node.x - posX,
 			dy = node.y - posY;
 		let dist = Math.sqrt(dx * dx + dy * dy);
-		if (dist < 30) return node;
+		if (dist < 15) return node;
 		return (
 			findNodeByPos(node.left, posX, posY) ||
 			findNodeByPos(node.right, posX, posY)
@@ -99,81 +100,91 @@ function findNodeByPos(node, posX, posY) {
 }
 
 // DELETE AN ELEMENT FROM THE TREE
-function bstPop(node) {
+function bstPop(node, key) {
 	unhighlightAll(root);
 	node.highlighted = true;
 
-	sleep(delay);
-	if (!node.left && !node.right) {
-		// if node has no child (is a leaf) then just delete it.
-		node = null;
-	} else if (!node.left) {
-		// if node has RIGHT child then set parent of deleted node to right child of deleted node
+	if (key < node.data) {
+		// if key < current node's data then look at the left subtree
 		sleep(delay);
-		// CODE FOR BLINKING ANIMATION AND BLA BLA BLA..
-		for (let i = 0; i < 2; i += 1) {
-			node.right.highlighted = true;
-			if (node === root) node.highlighted = true;
-			else node.parent.highlighted = true;
-			sleep(delay / 2);
-			node.right.highlighted = false;
-			if (node === root) node.highlighted = false;
-			else node.parent.highlighted = false;
-			sleep(delay / 2);
-		}
-		// END CODE FOR BLINKING ANIMATION AND BLA BLA BLA..
-		let del = node;
-		node.right.parent = node.parent;
-		node.right.loc = node.loc;
-		node = node.right;
-		del = null;
-		node.y -= 40;
-	} else if (!node.right) {
-		// if node has LEFT child then set parent of deleted node to left child of deleted node
+		node.left = bstPop(node.left, key);
+	} else if (key > node.data) {
+		// if key > current node's data then look at the right subtree
 		sleep(delay);
-		for (let i = 0; i < 2; i += 1) {
-			node.left.highlighted = true;
-			if (node === root) node.highlighted = true;
-			else node.parent.highlighted = true;
-			sleep(delay / 2);
-			node.left.highlighted = false;
-			if (node === root) node.highlighted = false;
-			else node.parent.highlighted = false;
-			sleep(delay / 2);
-		}
-		let del = node;
-		node.left.parent = node.parent;
-		node.left.loc = node.loc;
-		node = node.left;
-		del = null;
-		node.y -= 40;
+		node.right = bstPop(node.right, key);
 	} else {
-		// if node has TWO children then find largest node in the left subtree. Copy the value of it into node to delete. After that, recursively delete the largest node in the left subtree
 		sleep(delay);
-		let largestLeft = node.left;
-		while (largestLeft.right) {
+		if (!node.left && !node.right) {
+			// if node has no child (is a leaf) then just delete it.
+			node = null;
+		} else if (!node.left) {
+			// if node has RIGHT child then set parent of deleted node to right child of deleted node
+			sleep(delay);
+			// CODE FOR BLINKING ANIMATION AND BLA BLA BLA..
+			for (let i = 0; i < 2; i += 1) {
+				node.right.highlighted = true;
+				if (node === root) node.highlighted = true;
+				else node.parent.highlighted = true;
+				sleep(delay / 2);
+				node.right.highlighted = false;
+				if (node === root) node.highlighted = false;
+				else node.parent.highlighted = false;
+				sleep(delay / 2);
+			}
+			// END CODE FOR BLINKING ANIMATION AND BLA BLA BLA..
+			let del = node;
+			node.right.parent = node.parent;
+			node.right.loc = node.loc;
+			node = node.right;
+			del = null;
+			node.y -= 40;
+		} else if (!node.right) {
+			// if node has LEFT child then set parent of deleted node to left child of deleted node
+			sleep(delay);
+			for (let i = 0; i < 2; i += 1) {
+				node.left.highlighted = true;
+				if (node === root) node.highlighted = true;
+				else node.parent.highlighted = true;
+				sleep(delay / 2);
+				node.left.highlighted = false;
+				if (node === root) node.highlighted = false;
+				else node.parent.highlighted = false;
+				sleep(delay / 2);
+			}
+			let del = node;
+			node.left.parent = node.parent;
+			node.left.loc = node.loc;
+			node = node.left;
+			del = null;
+			node.y -= 40;
+		} else {
+			// if node has TWO children then find largest node in the left subtree. Copy the value of it into node to delete. After that, recursively delete the largest node in the left subtree
+			sleep(delay);
+			let largestLeft = node.left;
+			while (largestLeft.right) {
+				unhighlightAll(root);
+				largestLeft.highlighted = true;
+				sleep(delay / 2);
+				largestLeft = largestLeft.right;
+			}
 			unhighlightAll(root);
 			largestLeft.highlighted = true;
-			sleep(delay / 2);
-			largestLeft = largestLeft.right;
+			sleep(delay);
+			// CODE FOR BLINKING ANIMATION AND BLA BLA BLA...
+			for (let i = 0; i < 2; i += 1) {
+				largestLeft.highlighted = true;
+				node.highlighted = true;
+				sleep(delay / 2);
+				largestLeft.highlighted = false;
+				node.highlighted = false;
+				sleep(delay / 2);
+			}
+			// END CODE FOR BLINKING ANIMATION AND BLA BLA BLA...
+			node.data = largestLeft.data;
+			unhighlightAll(root);
+			sleep(delay);
+			node.left = bstPop(node.left, largestLeft.data);
 		}
-		unhighlightAll(root);
-		largestLeft.highlighted = true;
-		sleep(delay);
-		// CODE FOR BLINKING ANIMATION AND BLA BLA BLA...
-		for (let i = 0; i < 2; i += 1) {
-			largestLeft.highlighted = true;
-			node.highlighted = true;
-			sleep(delay / 2);
-			largestLeft.highlighted = false;
-			node.highlighted = false;
-			sleep(delay / 2);
-		}
-		// END CODE FOR BLINKING ANIMATION AND BLA BLA BLA...
-		node.data = largestLeft.data;
-		unhighlightAll(root);
-		sleep(delay);
-		node.left = bstPop(node.left, largestLeft.data);
 	}
 	if (node == null) return node;
 
@@ -202,65 +213,31 @@ function updatePosition(node) {
 	}
 }
 
-/*************
- * UI MODULE *
- *************/
+// EVENT LISTENER TO LISTEN COMMANDS FROM THE MAIN THREAD. THE TREE WILL EXECUTE EVERYTHING THE MAIN THREAD WANTS.
+// AT EACH STEP IN THE ALGORITHM, THE TREE WILL NOTIFY THE MAIN THREAD ABOUT CHANGES IN THE TREE SO THE MAIN THREAD CAN DISPLAY THE CHANGES STEP-BY-STEP TO USERS FOR EASIER UNDERSTANDING
+self.addEventListener("message", (event) => {
+	switch (event.data[0]) {
+		case "Insert": {
+			const value = event.data[1]; // get value from user input
+			root = bstPush(root, value, 50, null, "root"); // push it
+			updatePosition(root); // update all node position
+			self.postMessage([root, "Finished"]); // let main thread know that operation has finished
+			break;
+		}
+		case "Delete": {
+			const posX = event.data[1]; // get value from user input
+			const posY = event.data[2]; // get value from user input
 
-function displayNode(curr) {
-	if (curr != null) {
-		ellipseMode(CENTER);
-		textAlign(CENTER);
-		stroke("black");
-		strokeWeight(3);
-		if (curr.left != null) line(curr.x, curr.y, curr.left.x, curr.left.y);
-		if (curr.right != null) line(curr.x, curr.y, curr.right.x, curr.right.y);
-		noStroke();
-		fill("red");
-		if (curr.highlighted) ellipse(curr.x, curr.y, 40, 40);
-		fill(231, 173, 173);
-		ellipse(curr.x, curr.y, 30, 30);
-		fill("black");
-		text(curr.data, curr.x, curr.y + 5);
-		displayNode(curr.left);
-		displayNode(curr.right);
+			let node = findNodeByPos(root, posX, posY);
+			if (node) {
+				root = bstPop(root, node.data); // delete it
+				updatePosition(root); // update the node position
+				unhighlightAll(root); // unhighlight all nodes
+			}
+			self.postMessage([root, "Finished"]); // send message to main thread that the tree is empty
+			break;
+		}
+		default:
+			break;
 	}
-}
-
-function insert() {
-	let value = document.getElementById("insertValue").value;
-	if (isNaN(value) === true) return undefined;
-	root = bstPush(root, value, 50, null, "root"); // bstPush it
-	updatePosition(root); // update all node position
-	return 0;
-}
-
-function del(posX, posY) {
-	let node = findNodeByPos(root, posX, posY);
-	if (node) {
-		root = bstPop(node); // delete it
-		updatePosition(root); // update the node position
-		unhighlightAll(root); // unhighlight all nodes
-	}
-
-	return 0;
-}
-
-function setup() {
-	// INITIALIZE WEB WORKER THREAD FOR THE TREE ALGORITHM AND VISUALIZATION
-	// SET CANVAS AND TEXT SIZE
-	const canvas = createCanvas(canvasWidth, canvasHeight);
-	canvas.parent("main");
-	canvas.mouseClicked(function (event) {
-		del(event.layerX, event.layerY);
-	});
-
-	document.getElementById("insertButton").addEventListener("click", (e) => {
-		insert();
-	});
-}
-
-function draw() {
-	background("white");
-	displayNode(root);
-	fill("black");
-}
+});
