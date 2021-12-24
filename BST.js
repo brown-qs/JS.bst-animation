@@ -32,6 +32,19 @@ function sleep(ms) {
 	const start = Date.now();
 	while (Date.now() < start + ms);
 }
+// UNHIGHLIGHT ALL NODES
+function unhighlightAll(node) {
+	if (node !== null) {
+		node.highlighted = false;
+		unhighlightAll(node.left);
+		unhighlightAll(node.right);
+	}
+}
+// GET CURRENT HEIGHT/LEVEL OF A NODE
+function getHeight(node) {
+	if (node == null) return 0;
+	return node.height;
+}
 
 // INSERT AN ELEMENT TO THE TREE
 function push(node, data, posY, parent, loc) {
@@ -78,7 +91,86 @@ function findNodeByPos(node, posX, posY) {
 	}
 }
 
-
 // DELETE AN ELEMENT FROM THE TREE
 function pop(node) {
+	unhighlightAll(root);
+	node.highlighted = true;
+
+	sleep(delay);
+	if (!node.left && !node.right) {
+		// if node has no child (is a leaf) then just delete it.
+		node = null;
+	} else if (!node.left) {
+		// if node has RIGHT child then set parent of deleted node to right child of deleted node
+		sleep(delay);
+		// CODE FOR BLINKING ANIMATION AND BLA BLA BLA..
+		for (let i = 0; i < 2; i += 1) {
+			node.right.highlighted = true;
+			if (node === root) node.highlighted = true;
+			else node.parent.highlighted = true;
+			sleep(delay / 2);
+			node.right.highlighted = false;
+			if (node === root) node.highlighted = false;
+			else node.parent.highlighted = false;
+			sleep(delay / 2);
+		}
+		// END CODE FOR BLINKING ANIMATION AND BLA BLA BLA..
+		let del = node;
+		node.right.parent = node.parent;
+		node.right.loc = node.loc;
+		node = node.right;
+		del = null;
+		node.y -= 40;
+	} else if (!node.right) {
+		// if node has LEFT child then set parent of deleted node to left child of deleted node
+		sleep(delay);
+		for (let i = 0; i < 2; i += 1) {
+			node.left.highlighted = true;
+			if (node === root) node.highlighted = true;
+			else node.parent.highlighted = true;
+			sleep(delay / 2);
+			node.left.highlighted = false;
+			if (node === root) node.highlighted = false;
+			else node.parent.highlighted = false;
+			sleep(delay / 2);
+		}
+		let del = node;
+		node.left.parent = node.parent;
+		node.left.loc = node.loc;
+		node = node.left;
+		del = null;
+		node.y -= 40;
+	} else {
+		// if node has TWO children then find largest node in the left subtree. Copy the value of it into node to delete. After that, recursively delete the largest node in the left subtree
+		sleep(delay);
+		let largestLeft = node.left;
+		while (largestLeft.right) {
+			unhighlightAll(root);
+			largestLeft.highlighted = true;
+			sleep(delay / 2);
+			largestLeft = largestLeft.right;
+		}
+		unhighlightAll(root);
+		largestLeft.highlighted = true;
+		sleep(delay);
+		// CODE FOR BLINKING ANIMATION AND BLA BLA BLA...
+		for (let i = 0; i < 2; i += 1) {
+			largestLeft.highlighted = true;
+			node.highlighted = true;
+			sleep(delay / 2);
+			largestLeft.highlighted = false;
+			node.highlighted = false;
+			sleep(delay / 2);
+		}
+		// END CODE FOR BLINKING ANIMATION AND BLA BLA BLA...
+		node.data = largestLeft.data;
+		unhighlightAll(root);
+		sleep(delay);
+		node.left = pop(node.left, largestLeft.data);
+	}
+	if (node == null) return node;
+
+	node.height = Math.max(getHeight(node.left), getHeight(node.right)) + 1; // update the heights of all nodes traversed by the pop() function
+
+	return node; // return the modifications back to the caller
 }
