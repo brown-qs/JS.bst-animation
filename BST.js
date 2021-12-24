@@ -1,5 +1,9 @@
 let root = null;
 
+/************
+ * BST CORE *
+ ************/
+
 class Node {
 	constructor(d, height, y, parent, loc) {
 		if (d instanceof Node) {
@@ -81,13 +85,13 @@ function findNodeByPos(node, posX, posY) {
 		let dx = node.x - posX,
 			dy = node.y - posY;
 		let dist = Math.sqrt(dx * dx + dy * dy);
-		if (dist < 30) return true;
+		if (dist < 30) return node;
 		return (
 			findNodeByPos(node.left, posX, posY) ||
 			findNodeByPos(node.right, posX, posY)
 		);
 	} else {
-		return false;
+		return null;
 	}
 }
 
@@ -173,4 +177,97 @@ function pop(node) {
 	node.height = Math.max(getHeight(node.left), getHeight(node.right)) + 1; // update the heights of all nodes traversed by the pop() function
 
 	return node; // return the modifications back to the caller
+}
+
+// AFTER INSERT OR DELETE, ALWAYS UPDATE ALL NODES POSITION IN THE CANVAS
+// FORMULA FOR DETERMINING NODE POSITION IS: (NODE'S PARENT POSITION - ((2 ^ (NODE'S CURRENT HEIGHT + 1)) * 10)))
+function updatePosition(node) {
+	if (node != null) {
+		if (node.loc === "left")
+			node.x = node.parent.x - 2 ** (getHeight(node.right) + 1) * 10;
+		else if (node.loc === "right")
+			node.x = node.parent.x + 2 ** (getHeight(node.left) + 1) * 10;
+		else if (node.loc === "root") {
+			node.x = canvasWidth / 2;
+			node.y = 50;
+		}
+		if (node.parent != null) node.y = node.parent.y + 40;
+		if (node.left != null) node.left.parent = node; // update parent information of current node
+		if (node.right != null) node.right.parent = node; // update parent information of current node
+		updatePosition(node.left);
+		updatePosition(node.right);
+	}
+}
+
+// EVENT LISTENER TO LISTEN COMMANDS FROM THE MAIN THREAD. THE TREE WILL EXECUTE EVERYTHING THE MAIN THREAD WANTS.
+self.addEventListener("message", (event) => {
+	switch (event.data[0]) {
+		case "Insert": {
+			const value = event.data[1]; // get value from user input
+			canvasWidth = event.data[2]; // get canvasWidth from main thread. Important for node positioning
+			break;
+		}
+		case "Delete": {
+			const posX = event.data[1]; // get value from user input
+			const posY = event.data[2];
+			break;
+		}
+		default:
+			break;
+	}
+});
+
+/*************
+ * UI MODULE *
+ *************/
+
+function displayNode(curr) {
+	if (curr != null) {
+		ellipseMode(CENTER);
+		textAlign(CENTER);
+		stroke("black");
+		strokeWeight(3);
+		if (curr.left != null) line(curr.x, curr.y, curr.left.x, curr.left.y);
+		if (curr.right != null) line(curr.x, curr.y, curr.right.x, curr.right.y);
+		noStroke();
+		fill("red");
+		if (curr.highlighted) ellipse(curr.x, curr.y, 40, 40);
+		fill(231, 173, 173);
+		ellipse(curr.x, curr.y, 30, 30);
+		fill("black");
+		text(curr.data, curr.x, curr.y + 5);
+		displayNode(curr.left);
+		displayNode(curr.right);
+	}
+}
+function insert() {
+	let value = 100; // Placeholder
+	if (isNaN(value) === true) return undefined;
+	root = push(root, value, 50, null, "root"); // push it
+	updatePosition(root); // update all node position
+	return 0;
+}
+
+function del() {
+	if (isNaN(value) === true) return undefined;
+	let node = findNodeByPos(root, posX, posY);
+	if (node) {
+		root = pop(node); // delete it
+		updatePosition(root); // update the node position
+		unhighlightAll(root); // unhighlight all nodes
+	}
+
+	return 0;
+}
+
+function setup() {
+	// INITIALIZE WEB WORKER THREAD FOR THE TREE ALGORITHM AND VISUALIZATION
+	BST = new Worker("BST.js");
+}
+
+function draw() {
+	background("white");
+	displayNode(tree);
+	fill("black");
+	textAlign(LEFT);
 }
